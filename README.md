@@ -61,15 +61,45 @@ photographic or AI-generated depiction.
 
 ## GitHub Actions
 
-1. Push this repository to GitHub.
-2. In **Settings → Secrets and variables → Actions**, add:
-   - `GEMINI_API_KEY` (required)
-   - `HUGGINGFACE_TOKEN` (optional; needed for authenticated Hugging Face inference)
-3. Optionally add `GOOGLE_SEARCH_API_KEY` and `GOOGLE_SEARCH_ENGINE_ID` for Google Programmable
-   Search. Without both, the collector uses DuckDuckGo HTML results. Google CSE has quotas and
-   requires its own setup.
-4. Open **Actions → Generate festival documentary → Run workflow**, select a festival and options,
-   then download the `festival-documentary-…` artifact from the completed run.
+### Add repository secrets
+
+Open the repository's [Actions secrets and variables settings](https://github.com/rishuwrites/hindu-festival-documentary-generator/settings/secrets/actions)
+and select **New repository secret** for each value below. These values are credentials: paste
+them into GitHub's secret-value field only, never into a workflow file, issue, or commit.
+
+**Required**
+
+1. `GEMINI_API_KEY` — create an API key in [Google AI Studio](https://aistudio.google.com/app/apikey).
+   Copy the key and add it as the value of the `GEMINI_API_KEY` repository secret. Gemini API
+   availability, quotas, and pricing depend on your Google account and current terms.
+
+**Optional**
+
+2. `HUGGINGFACE_TOKEN` — create a token from your
+   [Hugging Face access-token settings](https://huggingface.co/settings/tokens), then add it with
+   this exact secret name. Choose only the minimum permissions supported for inference. Some
+   models/providers require authorization or have quotas or charges.
+3. `GOOGLE_SEARCH_API_KEY` — optional Google Programmable Search credential. Create or select a
+   project in [Google Cloud Console](https://console.cloud.google.com/), enable the
+   [Custom Search API](https://console.cloud.google.com/apis/library/customsearch.googleapis.com),
+   then create an API key under [APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials).
+   Google may require billing, and API access and quotas can change.
+4. `GOOGLE_SEARCH_ENGINE_ID` — create a search engine in the
+   [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all).
+   Open its **Overview** or **Setup** page and copy the **Search engine ID** (`cx`); save that value
+   under this exact secret name.
+
+Google Search is enabled only when **both** `GOOGLE_SEARCH_API_KEY` and
+`GOOGLE_SEARCH_ENGINE_ID` are set. If either is missing, the collector uses DuckDuckGo instead.
+You do not need to create `GITHUB_TOKEN` yourself: GitHub Actions supplies it automatically.
+Microsoft Edge TTS also needs no API secret.
+
+### Run the workflow
+
+1. Open **Actions → Generate festival documentary → Run workflow**.
+2. Enter the festival and choose the language, duration, voice, and visual style.
+3. For a resumed run, optionally enter the earlier run ID and attempt number.
+4. Download the `festival-documentary-…` artifact from the completed workflow run.
 
 The workflow installs FFmpeg and Noto fonts, caches Python packages, validates the required
 Gemini secret, and uploads outputs even on failure to aid diagnosis. Failed stages leave
