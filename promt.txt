@@ -1,0 +1,535 @@
+# Project: Automated Hindu Festival Research & AI Documentary Video Generator
+
+Act as a Senior Python Engineer, AI Video Generation Architect, Research Engineer, and DevOps Specialist.
+
+I want you to build a complete, production-ready, fully automated AI video generation codebase.
+
+Reference repository:
+https://github.com/rishuwrites/serial-recap-bot
+
+Study the reference repository's architecture, automation approach, modular code organization, and workflow wherever accessible. Use it as inspiration, but build an entirely new system specifically for Hindu festival research and documentary video production.
+
+Do not just provide a plan or sample code. Build the complete working repository with all necessary source files, configurations, GitHub Actions workflows, tests, documentation, and error handling.
+
+## 1. Main Objective
+
+The system should accept just one input:
+
+Festival Name: Diwali / Holi / Chhath Puja / Navratri / Ram Navami / Janmashtami / Makar Sankranti / Maha Shivratri / Durga Puja / etc.
+
+After receiving the festival name, the system must automatically:
+
+1. Research the festival in depth.
+2. Collect information from multiple independent and trustworthy sources.
+3. Cross-check facts and resolve conflicting information.
+4. Generate a detailed documentary script using Google Gemini.
+5. Divide the script into timed scenes.
+6. Generate relevant images using multiple AI image-generation providers.
+7. Generate Hindi narration using Microsoft Edge TTS.
+8. Add animated overlays, transitions, and motion effects.
+9. Synchronize images, narration, subtitles, and animations.
+10. Render a complete documentary video of at least 6 minutes.
+11. Export the final MP4 video and all supporting files as GitHub Actions artifacts.
+
+The entire pipeline must run automatically through GitHub Actions.
+
+## 2. Deep Research Engine
+
+Research quality is extremely important.
+
+Do not depend on a single website or source.
+
+Use multiple research sources, including:
+
+- Google Search results.
+- Wikipedia (background reference only).
+- Government and tourism websites.
+- Ministry of Culture, Government of India.
+- Official temple and religious institution websites.
+- Authentic historical references.
+- Academic articles and research publications.
+- Sanskrit and Hindu scripture references where relevant.
+- Reputable newspapers and cultural publications.
+
+Research must cover:
+
+1. Origin and history of the festival.
+2. Historical background and evolution.
+3. Religious and spiritual significance.
+4. References in Hindu scriptures, Puranas, and traditional texts.
+5. Associated gods and goddesses.
+6. Mythological stories and legends.
+7. Regional celebrations across India.
+8. Traditional rituals and their meanings.
+9. Puja procedures and important customs.
+10. Traditional foods and offerings.
+11. Cultural and social significance.
+12. Scientific or seasonal explanations, where supported by evidence.
+13. Important dates and astronomical calculations, where relevant.
+14. How the festival is celebrated in modern India.
+
+### Research reliability requirements
+
+- Use at least 5 independent sources where available.
+- Prefer primary and authoritative sources.
+- Store source URLs and publication information.
+- Cross-check important historical and religious claims.
+- Never invent scripture references, quotations, dates, or historical facts.
+- Clearly distinguish mythology, religious tradition, historical evidence, and modern interpretation.
+- If information is disputed, explain the disagreement instead of presenting one interpretation as established fact.
+
+Save research output as structured JSON and Markdown.
+
+## 3. Gemini Script Generation Engine
+
+Use Google Gemini API as the primary intelligence and script-generation engine.
+
+The system should generate an engaging Hindi documentary script.
+
+Requirements:
+
+- Minimum video duration: 6 minutes.
+- Target duration: 7–9 minutes.
+- Language: Natural, fluent Hindi.
+- Tone: Professional Indian documentary narration.
+- Storytelling: Cinematic, emotional, informative, and engaging.
+- Avoid repetitive explanations.
+- Include a powerful opening hook.
+- Build curiosity throughout the documentary.
+- Include meaningful transitions between sections.
+- End with a memorable conclusion.
+
+The script must be based on collected research, not general AI knowledge alone.
+
+Generate:
+
+- Documentary title.
+- Video description.
+- Complete Hindi narration.
+- Scene-by-scene breakdown.
+- Narration timestamps.
+- Image-generation prompts.
+- Animation instructions.
+- Subtitle text.
+- Source references.
+
+Use a second Gemini model or configurable fallback provider when the primary model is unavailable.
+
+## 4. AI Image Generation Engine – Multiple Providers
+
+This is a critical requirement.
+
+Generate approximately ONE relevant image for every 10 seconds of video.
+
+For a 6-minute documentary, the target is at least 36 image assets.
+
+For an 8-minute documentary, the target is approximately 48 image assets.
+
+Each image must visually correspond to the narration of its scene.
+
+Support multiple image-generation providers through independent adapters.
+
+Investigate and integrate providers with usable free tiers or free local inference options, where available.
+
+Potential integrations:
+
+- Pollinations AI, subject to current availability and terms.
+- Hugging Face Inference providers.
+- Cloud-based open-model image generation APIs.
+- Configurable Stable Diffusion-compatible endpoints.
+- Local Stable Diffusion or other open-source image models when GPU resources are available.
+
+Important:
+
+Do not assume that every provider is permanently free. Check provider availability, authentication requirements, rate limits, and licensing.
+
+### Automatic image fallback
+
+Implement provider priority and automatic fallback.
+
+Example:
+
+Provider A → Provider B → Provider C → Local model → Retry queue.
+
+If one provider fails, automatically try the next provider.
+
+Additional requirements:
+
+- Retry with exponential backoff.
+- Maintain image-generation logs.
+- Save prompts and provider information.
+- Validate downloaded image files.
+- Avoid duplicate images.
+- Generate images in 16:9 format.
+- Maintain consistent visual style across scenes.
+- Prefer historically and culturally accurate Indian visual representations.
+- Avoid incorrect religious symbols, deities, clothing, and rituals.
+
+If image generation fails, use a configurable fallback image-generation or stock-image strategy rather than silently creating broken scenes.
+
+## 5. Hindi Voice Generation – Microsoft Edge TTS
+
+Use Microsoft Edge TTS as the default narration engine.
+
+Requirements:
+
+- Natural Hindi narration.
+- Prefer suitable Indian Hindi voices.
+- Configurable male and female voices.
+- Adjustable speech rate and pitch.
+- Generate audio scene by scene.
+- Save individual scene audio files.
+- Merge all audio into one narration track.
+- Automatically calculate audio duration.
+- Avoid unnecessary silence.
+- Synchronize narration with video scenes.
+
+The system must support retrying failed TTS requests.
+
+Keep TTS independent from the image and research modules.
+
+## 6. Cinematic Video Editing and Animation
+
+Use FFmpeg, MoviePy, Pillow, OpenCV, or other suitable open-source libraries.
+
+Create a professional documentary-style video.
+
+Each scene should have:
+
+- Relevant AI-generated background image.
+- Smooth camera movement.
+- Slow zoom-in and zoom-out.
+- Pan and parallax effects where practical.
+- Cinematic transitions.
+- Hindi subtitles.
+- Narration synchronization.
+- Appropriate background music.
+- Sound effects when relevant.
+
+### Moving overlays and visual elements
+
+This feature is particularly important.
+
+Do not create a video consisting only of static images.
+
+Add context-aware moving overlays depending on the festival and scene.
+
+Examples:
+
+Diwali:
+- Animated diyas.
+- Floating glowing particles.
+- Moving light rays.
+- Fireworks.
+- Rangoli-inspired decorative elements.
+
+Holi:
+- Animated color powder.
+- Color splashes.
+- Floating particles.
+- Colorful transitions.
+
+Chhath Puja:
+- Animated water reflections.
+- Sun rays.
+- Floating diyas.
+- River atmosphere.
+
+Navratri:
+- Decorative mandala animations.
+- Glowing patterns.
+- Flower petals.
+- Festival-themed transitions.
+
+General:
+- Animated title cards.
+- Chapter headings.
+- Sanskrit shlokas when verified.
+- Decorative borders.
+- Subtle light effects.
+- Motion graphics.
+- Animated maps and historical timelines where relevant.
+
+Animations must match the narration and must not obstruct important visuals or subtitles.
+
+## 7. Background Music and Sound Design
+
+Use copyright-safe or appropriately licensed music.
+
+Requirements:
+
+- Background music should match the festival atmosphere.
+- Support royalty-free music libraries and user-provided audio.
+- Automatically lower background music volume during narration.
+- Add suitable sound effects.
+- Never use copyrighted commercial songs without authorization.
+
+## 8. Automatic Subtitle Generation
+
+Generate Hindi subtitles from the final narration.
+
+Requirements:
+
+- Accurate Hindi Devanagari text.
+- Scene-level synchronization.
+- Proper line breaks.
+- Readable font and size.
+- Suitable contrast and background.
+- Export SRT subtitles.
+- Burn subtitles into the final video.
+
+## 9. Complete GitHub Actions Automation
+
+Everything must work through GitHub Actions.
+
+Create:
+
+.github/workflows/generate-video.yml
+
+The workflow should support:
+
+- Manual execution using workflow_dispatch.
+- Festival name as user input.
+- Optional language selection.
+- Optional target video duration.
+- Optional voice selection.
+- Optional visual style selection.
+- Automatic dependency installation.
+- Research execution.
+- Gemini script generation.
+- Image generation with provider fallbacks.
+- Edge TTS generation.
+- Video rendering.
+- Final video validation.
+- Artifact upload.
+
+Example workflow inputs:
+
+festival_name: Diwali
+language: Hindi
+duration_minutes: 8
+voice: hi-IN-SwaraNeural
+visual_style: Cinematic Documentary
+
+The user should not need to run Python commands locally.
+
+GitHub Actions must perform the complete generation pipeline.
+
+Include:
+
+- Proper workflow permissions.
+- Job timeouts.
+- Dependency caching.
+- Failure handling.
+- Logs.
+- Artifact retention.
+- Resume/retry support where practical.
+
+Important: GitHub-hosted runners have limited CPU, memory, execution time, and storage. Design the pipeline to work within realistic runner limits. Do not assume GPU access.
+
+If a job exceeds the practical runtime of one GitHub Actions job, implement a resumable or staged workflow.
+
+## 10. Final Video Output
+
+Minimum duration: 6 minutes.
+
+Preferred resolution: 1920 × 1080.
+
+Aspect ratio: 16:9.
+
+Format: MP4.
+
+Video codec: H.264.
+
+Audio codec: AAC.
+
+Frame rate: 30 FPS.
+
+Deliverables:
+
+- final_video.mp4
+- narration.mp3
+- subtitles.srt
+- script.md
+- research.json
+- sources.json
+- scene_manifest.json
+- generated_images/
+- generation_logs/
+
+Upload the complete deliverables as downloadable GitHub Actions artifacts.
+
+## 11. Project Architecture
+
+Create a clean modular Python codebase.
+
+Suggested structure:
+
+festival-documentary-generator/
+│
+├── .github/
+│   └── workflows/
+│       └── generate-video.yml
+│
+├── config/
+│   ├── settings.yaml
+│   └── providers.yaml
+│
+├── research/
+│   ├── search_engine.py
+│   ├── source_collector.py
+│   ├── fact_checker.py
+│   └── research_writer.py
+│
+├── ai/
+│   ├── gemini_client.py
+│   ├── script_generator.py
+│   └── prompt_templates.py
+│
+├── image_generation/
+│   ├── base_provider.py
+│   ├── provider_manager.py
+│   ├── pollinations.py
+│   ├── huggingface.py
+│   └── local_fallback.py
+│
+├── audio/
+│   ├── edge_tts_engine.py
+│   ├── audio_processor.py
+│   └── background_music.py
+│
+├── video/
+│   ├── scene_builder.py
+│   ├── animation_engine.py
+│   ├── subtitle_engine.py
+│   ├── transition_engine.py
+│   └── renderer.py
+│
+├── pipeline/
+│   ├── orchestrator.py
+│   ├── state_manager.py
+│   └── validators.py
+│
+├── output/
+│
+├── tests/
+│
+├── requirements.txt
+├── .env.example
+├── .gitignore
+├── main.py
+└── README.md
+
+You may improve this architecture if a better implementation is appropriate.
+
+## 12. Reliability and Error Handling
+
+The system must not fail completely because one API or image provider is unavailable.
+
+Implement:
+
+- Multiple image providers.
+- Configurable Gemini model fallback.
+- Automatic retries.
+- Request timeouts.
+- Rate-limit handling.
+- Failed-scene regeneration.
+- Checkpoint-based pipeline recovery.
+- Image validation.
+- Audio validation.
+- Video duration validation.
+- Final MP4 integrity validation.
+
+Never mark a workflow successful if the final video is missing, corrupt, or shorter than 6 minutes.
+
+## 13. Security and Cost Management
+
+- Store all API keys in GitHub Secrets.
+- Never hardcode API keys.
+- Provide a complete .env.example.
+- Do not commit generated credentials.
+- Prefer genuinely free services when available.
+- Add provider usage tracking.
+- Avoid unnecessary API requests.
+- Provide an option to disable paid providers.
+- Explain all external service limitations.
+
+Do not claim that the entire project is permanently free if a provider has usage limits or paid requirements.
+
+## 14. Testing Requirements
+
+Create actual automated tests.
+
+Test:
+
+- Research source collection.
+- Gemini integration.
+- JSON parsing.
+- Image provider fallback.
+- Edge TTS generation.
+- Scene synchronization.
+- Subtitle generation.
+- Video duration.
+- FFmpeg rendering.
+- GitHub Actions workflow configuration.
+
+Include mocked API tests so tests can run without consuming API credits.
+
+Provide a small end-to-end test mode for generating a short sample video.
+
+## 15. Final Development Instructions
+
+Follow this development order:
+
+Phase 1: Inspect the reference repository and finalize architecture.
+
+Phase 2: Build the research and source-verification system.
+
+Phase 3: Build Gemini script generation.
+
+Phase 4: Build multiple image-generation adapters and fallback logic.
+
+Phase 5: Build Hindi Edge TTS narration.
+
+Phase 6: Build the animation and video-rendering engine.
+
+Phase 7: Integrate all modules through a pipeline orchestrator.
+
+Phase 8: Implement GitHub Actions automation.
+
+Phase 9: Write automated tests.
+
+Phase 10: Test the complete pipeline using a real festival, such as Diwali.
+
+Phase 11: Fix all identified errors and finalize documentation.
+
+### Strict Instructions
+
+1. Do not provide pseudocode in place of working implementations.
+2. Do not leave important modules as TODO.
+3. Do not create fake provider integrations.
+4. Do not claim an API is free without checking its actual limitations.
+5. Do not skip the final video rendering stage.
+6. Do not silently substitute missing images.
+7. Do not hardcode a single festival.
+8. Make the system reusable for every major Hindu festival.
+9. Make all important settings configurable.
+10. Ensure that GitHub Actions can execute the entire workflow.
+
+### Final Acceptance Criteria
+
+The project will be considered complete only when:
+
+- I can enter a Hindu festival name in GitHub Actions.
+- The system automatically researches the festival using multiple sources.
+- Gemini generates a complete Hindi documentary script.
+- The system generates approximately one image per 10 seconds.
+- Image generation supports multiple providers and automatic fallback.
+- Edge TTS generates Hindi narration.
+- The video includes moving overlays, animations, transitions, and subtitles.
+- The final MP4 is at least 6 minutes long.
+- The complete process runs through GitHub Actions.
+- The final video is available as a downloadable artifact.
+- The README explains exactly how to configure GitHub Secrets and run the project.
+
+**Build the complete working repository, not just an architectural explanation.**

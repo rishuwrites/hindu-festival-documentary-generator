@@ -1,0 +1,140 @@
+name: Generate festival documentary
+
+on:
+  workflow_dispatch:
+    inputs:
+      festival_name:
+        description: Hindu festival to research and document
+        required: true
+        type: string
+        default: Diwali
+      language:
+        description: Narration language
+        required: true
+        type: choice
+        options:
+          - Hindi
+          - English
+        default: Hindi
+      duration_minutes:
+        description: Target video duration (production minimum 6 minutes)
+        required: true
+        type: choice
+        options:
+          - "6"
+          - "7"
+          - "8"
+          - "9"
+        default: "8"
+      voice:
+        description: Microsoft Edge TTS voice
+        required: true
+        type: choice
+        options:
+          - hi-IN-SwaraNeural
+          - hi-IN-MadhurNeural
+          - en-IN-NeerjaNeural
+          - en-IN-PrabhatNeural
+        default: hi-IN-SwaraNeural
+      visual_style:
+        description: Image and motion-art direction
+        required: true
+        type: choice
+        options:
+          - Cinematic Documentary
+          - Illustrated Historical
+          - Classical Indian Painting
+        default: Cinematic Documentary
+      test_mode:
+        description: Create a 1-minute test video instead of a production video
+        required: false
+        type: boolean
+        default: false
+      resume_run_id:
+        description: Optional previous run ID to restore its generated output/checkpoints
+        required: false
+        type: string
+        default: ""
+      resume_run_attempt:
+        description: Attempt number of the previous run artifact
+        required: false
+        type: string
+        default: "1"
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: festival-documentary-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
+      GOOGLE_SEARCH_ENGINE_ID: ${{ secrets.GOOGLE_SEARCH_ENGINE_ID }}
+      HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
+      FESTIVAL_NAME: ${{ inputs.festival_name }}
+      LANGUAGE: ${{ inputs.language }}
+      DURATION_MINUTES: ${{ inputs.duration_minutes }}
+      VOICE: ${{ inputs.voice }}
+      VISUAL_STYLE: ${{ inputs.visual_style }}
+      TEST_MODE: ${{ inputs.test_mode }}
+      OUTPUT_DIR: output
+      FONT_PATH: /usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Restore a previous run's checkpoint artifact
+        if: ${{ inputs.resume_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: festival-documentary-${{ inputs.resume_run_id }}-${{ inputs.resume_run_attempt }}
+          run-id: ${{ inputs.resume_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: output/
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install system media tools and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-core
+
+      - name: Install Python dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+
+      - name: Validate required secret
+        if: ${{ env.GEMINI_API_KEY == '' }}
+        run: |
+          echo "::error::Add GEMINI_API_KEY under Settings > Secrets and variables > Actions."
+          exit 1
+
+      - name: Generate the documentary
+        run: >-
+          python main.py
+          --festival "${FESTIVAL_NAME}"
+          --language "${LANGUAGE}"
+          --duration-minutes "${DURATION_MINUTES}"
+          --voice "${VOICE}"
+          --visual-style "${VISUAL_STYLE}"
+          ${{ inputs.test_mode && '--test-mode' || '' }}
+
+      - name: Upload video and supporting deliverables
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: festival-documentary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/
+          if-no-files-found: warn
+          retention-days: 14
