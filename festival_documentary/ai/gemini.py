@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
+
+LOGGER = logging.getLogger(__name__)
+API_BASE = "https://generativelanguage.googleapis.com/v1beta"
+MODEL_LIMIT = 8
+RETRY_DELAYS = (0, 30, 60, 120)
 
 
 class GeminiError(RuntimeError):
@@ -39,33 +45,100 @@ class GeminiClient:
         models: tuple[str, ...],
         timeout: int = 60,
         retries: int = 3,
+        max_models: int = MODEL_LIMIT,
     ) -> None:
         self.api_key = api_key
         self.models = models
         self.timeout = timeout
         self.retries = retries
+        self.max_models = max_models
+
+    def available_models(self) -> tuple[str, ...]:
+        """Prefer configured and current stable Flash models, discovered from Gemini API."""
+        ordered = [*self.models, "gemini-flash-latest"]
+        url = f"{API_BASE}/models?key={quote(self.api_key, safe='')}&pageSize=200"
+        request = Request(url, headers={"Accept": "application/json"})
+        try:
+            with urlopen(request, timeout=min(max(self.timeout, 30), 60)) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            discovered = [
+                str(item["name"]).rsplit("/", 1)[-1]
+                for item in payload.get("models", [])
+                if isinstance(item, dict)
+                and "generateContent" in item.get("supportedGenerationMethods", [])
+                and "flash" in str(item.get("name", "")).lower()
+                and not any(
+                    term in str(item.get("name", "")).lower()
+                    for term in (
+                        "image",
+                        "tts",
+                        "live",
+                        "audio",
+                        "robotics",
+                        "computer",
+                        "omni",
+                        "exp",
+                    )
+                )
+            ]
+            ordered.extend(
+                sorted(
+                    (name for name in discovered if "preview" not in name and "lite" not in name),
+                    reverse=True,
+                )
+            )
+            ordered.extend(
+                sorted(
+                    (name for name in discovered if "preview" not in name and "lite" in name),
+                    reverse=True,
+                )
+            )
+            ordered.extend(
+                sorted((name for name in discovered if "preview" in name), reverse=True)
+            )
+        except (HTTPError, URLError, TimeoutError, OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+            LOGGER.warning("Could not discover Gemini models; using configured fallbacks: %s", exc)
+
+        unique: list[str] = []
+        for model in ordered:
+            if model and model not in unique:
+                unique.append(model)
+        return tuple(unique[: self.max_models])
 
     def generate(self, prompt: str) -> tuple[str, str]:
         if not self.api_key:
             raise GeminiError("GEMINI_API_KEY is required to generate the documentary script.")
+        models = self.available_models()
+        if not models:
+            raise GeminiError("Gemini did not report any candidate models.")
         errors: list[str] = []
-        for model in self.models:
-            for attempt in range(self.retries):
+        quota_errors = 0
+        for round_index, wait in enumerate(RETRY_DELAYS[: max(1, self.retries)]):
+            if wait:
+                LOGGER.info("All available Gemini models are busy; retrying in %s seconds.", wait)
+                time.sleep(wait)
+            round_quota_errors = 0
+            for model in models:
                 try:
                     return self._generate_model(model, prompt), model
-                except GeminiQuotaError:
-                    raise
+                except GeminiQuotaError as exc:
+                    round_quota_errors += 1
+                    quota_errors += 1
+                    errors.append(f"{model}: {exc}")
                 except (HTTPError, URLError, TimeoutError, GeminiError) as exc:
                     errors.append(f"{model}: {exc}")
-                    if isinstance(exc, HTTPError) and exc.code not in {408, 429, 500, 502, 503, 504}:
-                        break
-                    if attempt + 1 < self.retries:
-                        time.sleep(min(2**attempt, 8))
+            if round_quota_errors == len(models):
+                raise GeminiQuotaError(
+                    "Every discovered Gemini model reported exhausted quota. Check Google AI "
+                    "Studio rate limits and billing before retrying."
+                )
+            if round_index + 1 == min(max(1, self.retries), len(RETRY_DELAYS)):
+                break
         raise GeminiError("All Gemini models failed: " + " | ".join(errors))
 
     def _generate_model(self, model: str, prompt: str) -> str:
         url = (
-            "https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{API_BASE}/models/"
             f"{quote(model, safe='')}:generateContent?key={quote(self.api_key, safe='')}"
         )
         body = {
@@ -79,7 +152,7 @@ class GeminiClient:
             method="POST",
         )
         try:
-            with urlopen(request, timeout=self.timeout) as response:
+            with urlopen(request, timeout=max(self.timeout, 180)) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
             detail = exc.read().decode("utf-8", "replace")

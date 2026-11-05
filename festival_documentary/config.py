@@ -14,11 +14,7 @@ class Settings:
     voice: str = "hi-IN-SwaraNeural"
     visual_style: str = "Cinematic Documentary"
     gemini_api_key: str = ""
-    gemini_models: tuple[str, ...] = (
-        "gemini-3.8-flash",
-        "gemini-3.7-flash",
-        "gemini-flash-latest",
-    )
+    gemini_models: tuple[str, ...] = ("gemini-flash-latest",)
     google_search_api_key: str = ""
     google_search_engine_id: str = ""
     huggingface_token: str = ""
@@ -32,7 +28,7 @@ class Settings:
     speech_rate: str = "+0%"
     speech_pitch: str = "+0Hz"
     test_mode: bool = False
-    max_retries: int = 3
+    max_retries: int = 4
     request_timeout: int = 45
 
     @classmethod
@@ -51,9 +47,9 @@ class Settings:
             "gemini_models": csv_tuple(
                 os.getenv(
                     "GEMINI_MODELS",
-                    "gemini-3.8-flash,gemini-3.7-flash,gemini-flash-latest",
+                    "gemini-flash-latest",
                 ),
-                ("gemini-3.8-flash", "gemini-3.7-flash", "gemini-flash-latest"),
+                ("gemini-flash-latest",),
             ),
             "google_search_api_key": os.getenv("GOOGLE_SEARCH_API_KEY", ""),
             "google_search_engine_id": os.getenv("GOOGLE_SEARCH_ENGINE_ID", ""),
@@ -74,7 +70,7 @@ class Settings:
             "speech_rate": os.getenv("SPEECH_RATE", "+0%"),
             "speech_pitch": os.getenv("SPEECH_PITCH", "+0Hz"),
             "test_mode": os.getenv("TEST_MODE", "false").lower() in {"1", "true", "yes"},
-            "max_retries": int(os.getenv("MAX_RETRIES", "3")),
+            "max_retries": int(os.getenv("MAX_RETRIES", "4")),
             "request_timeout": int(os.getenv("REQUEST_TIMEOUT", "45")),
         }
         values.update(overrides)

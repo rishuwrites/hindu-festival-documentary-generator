@@ -119,10 +119,10 @@ festival, language, duration, voice, style, output folder, and test mode.
   background reference. Government and academic hosts are labeled. Google CSE is optional; the
   default search backend is DuckDuckGo. Search snippets and scraped pages are not authoritative
   fact checks by themselves: review disputed claims and source citations before publication.
-- **Script:** Gemini REST API; `gemini-3.8-flash`, `gemini-3.7-flash`, and
-  `gemini-flash-latest` are tried in order by default (override with `GEMINI_MODELS`). Model
-  availability changes over time. Exhausted API quota is reported without repeatedly retrying
-  fallback models.
+- **Script:** Gemini REST API. The client queries the API for currently enabled Flash models,
+  tries `GEMINI_MODELS` and `gemini-flash-latest` first, then stable models before Lite/preview
+  variants. It tries up to eight candidates and retries busy model sets with increasing waits.
+  Model availability and quotas change over time.
 - **Images:** Pollinations is unauthenticated when available; service availability, terms, and
   throttling may change. Hugging Face requires a token for many models and its inference offering,
   model access, and charges/quotas depend on current account and provider terms. Neither service is

@@ -121,14 +121,37 @@ jobs:
           exit 1
 
       - name: Generate the documentary
-        run: >-
-          python main.py
-          --festival "${FESTIVAL_NAME}"
-          --language "${LANGUAGE}"
-          --duration-minutes "${DURATION_MINUTES}"
-          --voice "${VOICE}"
-          --visual-style "${VISUAL_STYLE}"
-          ${{ inputs.test_mode && '--test-mode' || '' }}
+        shell: bash
+        run: |
+          set +e
+          for attempt in 1 2; do
+            echo "=== Documentary generation attempt ${attempt}/2 ==="
+            args=(
+              --festival "$FESTIVAL_NAME"
+              --language "$LANGUAGE"
+              --duration-minutes "$DURATION_MINUTES"
+              --voice "$VOICE"
+              --visual-style "$VISUAL_STYLE"
+            )
+            if [[ "$TEST_MODE" == "true" ]]; then
+              args+=(--test-mode)
+            fi
+            python main.py "${args[@]}"
+            status=$?
+            if [[ $status -eq 0 ]]; then
+              echo "Documentary generation succeeded."
+              exit 0
+            fi
+            echo "::warning::Generation attempt ${attempt} failed with exit code ${status}."
+            if [[ -f output/generation_logs/pipeline.log ]]; then
+              tail -n 40 output/generation_logs/pipeline.log
+            fi
+            if [[ $attempt -lt 2 ]]; then
+              echo "Retrying in 45 seconds; completed pipeline stages will be resumed."
+              sleep 45
+            fi
+          done
+          exit 1
 
       - name: Upload video and supporting deliverables
         if: always()

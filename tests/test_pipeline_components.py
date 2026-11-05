@@ -88,24 +88,58 @@ class GeminiTests(unittest.TestCase):
 
     def test_model_fallback_after_rate_limit(self) -> None:
         client = GeminiClient("test-key", ("primary", "fallback"), retries=1)
-        with patch.object(
-            client,
-            "_generate_model",
-            side_effect=[HTTPError("url", 429, "rate limited", {}, None), '{"ok": true}'],
-        ), patch("festival_documentary.ai.gemini.time.sleep"):
+        with (
+            patch.object(client, "available_models", return_value=("primary", "fallback")),
+            patch.object(
+                client,
+                "_generate_model",
+                side_effect=[HTTPError("url", 429, "rate limited", {}, None), '{"ok": true}'],
+            ),
+        ):
             text, model = client.generate("prompt")
         self.assertEqual((text, model), ('{"ok": true}', "fallback"))
 
-    def test_quota_exhaustion_does_not_spam_fallback_models(self) -> None:
+    def test_quota_exhaustion_checks_available_fallback_models(self) -> None:
         client = GeminiClient("test-key", ("primary", "fallback"), retries=3)
-        with patch.object(
-            client,
-            "_generate_model",
-            side_effect=GeminiQuotaError("quota exhausted"),
-        ) as generate, patch("festival_documentary.ai.gemini.time.sleep"):
+        with (
+            patch.object(client, "available_models", return_value=("primary", "fallback")),
+            patch.object(
+                client, "_generate_model", side_effect=GeminiQuotaError("quota exhausted")
+            ) as generate,
+            patch("festival_documentary.ai.gemini.time.sleep"),
+        ):
             with self.assertRaises(GeminiQuotaError):
                 client.generate("prompt")
-        generate.assert_called_once()
+        self.assertEqual(generate.call_count, 2)
+
+    def test_model_discovery_prefers_latest_then_stable_flash_models(self) -> None:
+        client = GeminiClient("test-key", ("explicit-model",), max_models=8)
+        payload = {
+            "models": [
+                {"name": "models/gemini-3.6-flash", "supportedGenerationMethods": ["generateContent"]},
+                {"name": "models/gemini-3.8-flash", "supportedGenerationMethods": ["generateContent"]},
+                {"name": "models/gemini-3.9-flash-preview", "supportedGenerationMethods": ["generateContent"]},
+                {"name": "models/gemini-3.5-flash-lite", "supportedGenerationMethods": ["generateContent"]},
+                {"name": "models/gemini-3-flash-image", "supportedGenerationMethods": ["generateContent"]},
+                {"name": "models/gemini-3.7-pro", "supportedGenerationMethods": ["generateContent"]},
+            ]
+        }
+        with patch(
+            "festival_documentary.ai.gemini.urlopen",
+            return_value=io.BytesIO(json.dumps(payload).encode()),
+        ):
+            models = client.available_models()
+        self.assertEqual(
+            models,
+            (
+                "explicit-model",
+                "gemini-flash-latest",
+                "gemini-3.8-flash",
+                "gemini-3.6-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.9-flash-preview",
+            ),
+        )
 
     def test_api_quota_error_includes_actionable_message(self) -> None:
         client = GeminiClient("test-key", ("primary",), retries=1)
