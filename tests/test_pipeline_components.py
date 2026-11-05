@@ -314,9 +314,11 @@ class FFmpegRenderTests(unittest.TestCase):
 
 class WorkflowConfigurationTests(unittest.TestCase):
     def test_workflow_has_manual_inputs_and_artifact_upload(self) -> None:
-        workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "generate-video.yml").read_text(
-            encoding="utf-8"
-        )
+        workflow_path = Path(__file__).parents[1] / ".github" / "workflows" / "generate-video.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        media_install = workflow.split(
+            "      - name: Install system media tools and fonts\n", maxsplit=1
+        )[1].split("      - name:", maxsplit=1)[0]
         for expected in (
             "workflow_dispatch:",
             "festival_name:",
@@ -329,9 +331,12 @@ class WorkflowConfigurationTests(unittest.TestCase):
             "GOOGLE_SEARCH_API_KEY",
             "timeout-minutes: 360",
             "actions/upload-artifact@v4",
+            "Retrying in 45 seconds",
         ):
             with self.subTest(expected=expected):
                 self.assertIn(expected, workflow)
+        self.assertIn("Acquire::http::Timeout=20", media_install)
+        self.assertIn("Acquire::https::Timeout=20", media_install)
 
 
 class PipelineIntegrationTests(unittest.TestCase):
