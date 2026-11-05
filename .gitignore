@@ -3,6 +3,6 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
-output/
+output*/
 *.mp3
 *.mp4

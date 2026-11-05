@@ -13,6 +13,10 @@ class GeminiError(RuntimeError):
     pass
 
 
+class GeminiQuotaError(GeminiError):
+    pass
+
+
 def parse_json_response(text: str) -> dict[str, Any]:
     cleaned = text.strip()
     cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", cleaned, flags=re.IGNORECASE)
@@ -49,6 +53,8 @@ class GeminiClient:
             for attempt in range(self.retries):
                 try:
                     return self._generate_model(model, prompt), model
+                except GeminiQuotaError:
+                    raise
                 except (HTTPError, URLError, TimeoutError, GeminiError) as exc:
                     errors.append(f"{model}: {exc}")
                     if isinstance(exc, HTTPError) and exc.code not in {408, 429, 500, 502, 503, 504}:
@@ -72,8 +78,26 @@ class GeminiClient:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urlopen(request, timeout=self.timeout) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        try:
+            with urlopen(request, timeout=self.timeout) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            detail = exc.read().decode("utf-8", "replace")
+            try:
+                message = json.loads(detail).get("error", {}).get("message", detail)
+            except json.JSONDecodeError:
+                message = detail
+            if exc.code == 429 and any(
+                marker in message.lower()
+                for marker in ("exceeded your current quota", "resource_exhausted", "billing")
+            ):
+                raise GeminiQuotaError(
+                    "Gemini API quota is exhausted. Check the Google AI Studio rate limits "
+                    "and billing settings before retrying."
+                ) from exc
+            raise HTTPError(
+                exc.url, exc.code, str(message), exc.headers, None
+            ) from exc
         try:
             return payload["candidates"][0]["content"]["parts"][0]["text"]
         except (KeyError, IndexError, TypeError) as exc:

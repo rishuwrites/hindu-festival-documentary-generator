@@ -14,7 +14,11 @@ class Settings:
     voice: str = "hi-IN-SwaraNeural"
     visual_style: str = "Cinematic Documentary"
     gemini_api_key: str = ""
-    gemini_models: tuple[str, ...] = ("gemini-2.5-flash", "gemini-2.0-flash")
+    gemini_models: tuple[str, ...] = (
+        "gemini-3.8-flash",
+        "gemini-3.7-flash",
+        "gemini-flash-latest",
+    )
     google_search_api_key: str = ""
     google_search_engine_id: str = ""
     huggingface_token: str = ""
@@ -45,8 +49,11 @@ class Settings:
             "visual_style": os.getenv("VISUAL_STYLE", "Cinematic Documentary"),
             "gemini_api_key": os.getenv("GEMINI_API_KEY", ""),
             "gemini_models": csv_tuple(
-                os.getenv("GEMINI_MODELS", "gemini-2.5-flash,gemini-2.0-flash"),
-                ("gemini-2.5-flash", "gemini-2.0-flash"),
+                os.getenv(
+                    "GEMINI_MODELS",
+                    "gemini-3.8-flash,gemini-3.7-flash,gemini-flash-latest",
+                ),
+                ("gemini-3.8-flash", "gemini-3.7-flash", "gemini-flash-latest"),
             ),
             "google_search_api_key": os.getenv("GOOGLE_SEARCH_API_KEY", ""),
             "google_search_engine_id": os.getenv("GOOGLE_SEARCH_ENGINE_ID", ""),

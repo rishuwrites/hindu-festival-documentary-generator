@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import io
 import logging
 import shutil
 import tempfile
@@ -14,6 +15,7 @@ from PIL import Image
 from festival_documentary.ai.gemini import (
     GeminiClient,
     GeminiError,
+    GeminiQuotaError,
     parse_json_response,
     validate_script,
 )
@@ -93,6 +95,27 @@ class GeminiTests(unittest.TestCase):
         ), patch("festival_documentary.ai.gemini.time.sleep"):
             text, model = client.generate("prompt")
         self.assertEqual((text, model), ('{"ok": true}', "fallback"))
+
+    def test_quota_exhaustion_does_not_spam_fallback_models(self) -> None:
+        client = GeminiClient("test-key", ("primary", "fallback"), retries=3)
+        with patch.object(
+            client,
+            "_generate_model",
+            side_effect=GeminiQuotaError("quota exhausted"),
+        ) as generate, patch("festival_documentary.ai.gemini.time.sleep"):
+            with self.assertRaises(GeminiQuotaError):
+                client.generate("prompt")
+        generate.assert_called_once()
+
+    def test_api_quota_error_includes_actionable_message(self) -> None:
+        client = GeminiClient("test-key", ("primary",), retries=1)
+        payload = json.dumps(
+            {"error": {"message": "You exceeded your current quota.", "status": "RESOURCE_EXHAUSTED"}}
+        ).encode()
+        http_error = HTTPError("https://example.test", 429, "quota", {}, io.BytesIO(payload))
+        with patch("festival_documentary.ai.gemini.urlopen", side_effect=http_error):
+            with self.assertRaisesRegex(GeminiQuotaError, "quota is exhausted"):
+                client._generate_model("primary", "prompt")
 
 
 class ImageFallbackTests(unittest.TestCase):

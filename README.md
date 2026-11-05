@@ -119,9 +119,10 @@ festival, language, duration, voice, style, output folder, and test mode.
   background reference. Government and academic hosts are labeled. Google CSE is optional; the
   default search backend is DuckDuckGo. Search snippets and scraped pages are not authoritative
   fact checks by themselves: review disputed claims and source citations before publication.
-- **Script:** Gemini REST API; configured models are tried in order with retries. The prompt asks
-  for distinctions between mythology, tradition, and historical evidence, and requires citations
-  from collected material.
+- **Script:** Gemini REST API; `gemini-3.8-flash`, `gemini-3.7-flash`, and
+  `gemini-flash-latest` are tried in order by default (override with `GEMINI_MODELS`). Model
+  availability changes over time. Exhausted API quota is reported without repeatedly retrying
+  fallback models.
 - **Images:** Pollinations is unauthenticated when available; service availability, terms, and
   throttling may change. Hugging Face requires a token for many models and its inference offering,
   model access, and charges/quotas depend on current account and provider terms. Neither service is
@@ -159,7 +160,9 @@ python -m unittest discover -v
 
 - **No research sources:** Check network access; the pipeline fails instead of inventing source
   material.
-- **Gemini failure:** Check `GEMINI_API_KEY`, model availability, API quotas, and output logs.
+- **Gemini failure:** Check `GEMINI_API_KEY`, `GEMINI_MODELS`, model availability, and
+  [Google AI Studio rate limits](https://ai.google.dev/gemini-api/docs/rate-limits). Quota
+  exhaustion or billing setup may block script generation; see workflow logs.
 - **Images fail:** Configure Hugging Face or permit the clearly labeled local illustration
   fallback. See `generation_logs/images.jsonl`.
 - **Hindi glyphs are missing:** Install Noto Sans Devanagari and set `FONT_PATH`; ensure FFmpeg's
